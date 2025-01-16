@@ -6,4 +6,4 @@ app.get('/', (request, response) => {
     response.status(200).send({ message: "server running successfully"})
 })
 
-app.listen(process.env.PORT, console.log(`Server running at http://localhost:${process.env.PORT}`))
+module.exports  = app

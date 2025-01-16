@@ -3,4 +3,4 @@ WORKDIR /app
 COPY . /app
 RUN npm install
 EXPOSE 3500
-CMD node app.js
+CMD node cluster/clusterManager.js
