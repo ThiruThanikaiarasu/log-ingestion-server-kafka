@@ -1,9 +1,9 @@
 {
   "name": "log-ingestion-server",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "start": "nodemon cluster/clusterManager.js",
+    "start": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,7 +12,8 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.729.0",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "kafkajs": "^2.2.4"
   },
   "devDependencies": {
     "dotenv": "^16.4.7",
