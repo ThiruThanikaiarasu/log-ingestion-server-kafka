@@ -1,67 +1,59 @@
 version: 2.1
+
 jobs:
     install_dependencies:
         docker:
-            - image: circleci/node:current
-            - image: wurstmeister/kafka:latest
-              environment:
-                KAFKA_ADVERTISED_LISTENERS: INSIDE://localhost:9092
-                KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT
-                KAFKA_LISTENER_NAME_INSIDE: INSIDE
-                KAFKA_LISTENER_PORT: 9092
-                KAFKA_LISTENER_INTERFACE: lo0
-                KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
-                KAFKA_LISTENER_INTERNAL: INSIDE
+        - image: cimg/node:current
         steps:
-          - checkout
-          - run:
-                name: Install npm dependencies
-                command: |
-                    npm install 
+        - checkout
+        - run:
+            name: Install npm dependencies
+            command: |
+                npm install 
 
     start_kafka:
         docker:
-            - image: wurstmeister/kafka:latest
-              environment:
-                KAFKA_ADVERTISED_LISTENERS: INSIDE://localhost:9092
-                KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT
-                KAFKA_LISTENER_NAME_INSIDE: INSIDE
-                KAFKA_LISTENER_PORT: 9092
-                KAFKA_LISTENER_INTERFACE: lo0
-                KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
-                KAFKA_LISTENER_INTERNAL: INSIDE
+        - image: cimg/base:stable
         steps:
-            - run:
-                name: Install Docker Compose
-                command: |
-                    curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                    chmod +x /usr/local/bin/docker-compose
-            - run:
-                name: Start Kafka
-                command: |
-                    docker-compose -f docker-compose.yml up -d
+        - checkout
+        - setup_remote_docker:
+            docker_layer_caching: false
+        - run:
+            name: Install Docker Compose
+            command: |
+                curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o ~/docker-compose
+                chmod +x ~/docker-compose
+                mkdir -p ~/.local/bin
+                mv ~/docker-compose ~/.local/bin/docker-compose
+                export PATH=~/.local/bin:$PATH
+        - run:
+            name: Start Kafka
+            command: |
+                export PATH=~/.local/bin:$PATH
+                ~/.local/bin/docker-compose up -d
+                sleep 30  # Give some time for Kafka to start
 
     build_and_push_docker_image:
         docker:
-            - image: circleci/node:current
+        - image: cimg/node:current
         steps:
-            - checkout
-            - setup_remote_docker:
-                docker_layer_caching: false
-            - run:
-                name: Build Docker image
-                command: |
-                    docker build -t opportune-server -t thiruthanikaiarasu/log-ingestion-server:latest .
-                    echo $DOCKER_PASSWORD | docker login -u thiruthanikaiarasu --password-stdin
-                    docker push thiruthanikaiarasu/log-ingestion-server:latest
+        - checkout
+        - setup_remote_docker:
+            docker_layer_caching: false
+        - run:
+            name: Build and Push Docker image
+            command: |
+                docker build -t thiruthanikaiarasu/log-ingestion-server:latest .
+                echo $DOCKER_PASSWORD | docker login -u thiruthanikaiarasu --password-stdin
+                docker push thiruthanikaiarasu/log-ingestion-server:latest
 
 workflows:
     build_test:
         jobs:
-            - install_dependencies
-            - start_kafka:
-                requires:
-                    - install_dependencies
-            - build_and_push_docker_image:
-                requires:
-                    - start_kafka
+        - install_dependencies
+        - start_kafka:
+            requires:
+                - install_dependencies
+        - build_and_push_docker_image:
+            requires:
+                - start_kafka
