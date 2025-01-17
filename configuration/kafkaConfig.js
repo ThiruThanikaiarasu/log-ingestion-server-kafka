@@ -9,6 +9,11 @@ const kafkaProducer = new Kafka(
         producer: {
             createPartitioner: Partitioners.LegacyPartitioner,
         },
+        sasl: {
+            mechanism: 'aws',
+            username: '', 
+            password: '',
+        },
         logLevel: logLevel.ERROR,
     }
 )
@@ -17,6 +22,11 @@ const kafkaConsumer = new Kafka(
     {
         clientId: `${process.env.KAFKA_CLIENT_ID}-consumer`,
         brokers,
+        sasl: {
+            mechanism: 'aws',
+            username: '', 
+            password: '',
+        },
         logLevel: logLevel.ERROR,
     }
 )
