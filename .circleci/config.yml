@@ -2,59 +2,69 @@ version: 2.1
 
 jobs:
     install_dependencies:
-        docker:
+      docker:
         - image: cimg/node:current
-        steps:
+      steps:
         - checkout
+        - restore_cache:
+            keys:
+              - node-deps-v1-{{ .Branch }}-{{ checksum "package-lock.json" }}
+              - node-deps-v1-{{ .Branch }}
         - run:
             name: Install npm dependencies
-            command: |
-                npm install 
+            command: npm install
+        - save_cache:
+            key: node-deps-v1-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            paths:
+              - ./node_modules
 
     start_services:
-        docker:
+      docker:
         - image: cimg/base:stable
-        steps:
+      steps:
         - checkout
         - setup_remote_docker:
             docker_layer_caching: false
         - run:
             name: Install Docker Compose
             command: |
-                curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o ~/docker-compose
-                chmod +x ~/docker-compose
-                mkdir -p ~/.local/bin
-                mv ~/docker-compose ~/.local/bin/docker-compose
-                export PATH=~/.local/bin:$PATH
+              curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o ~/docker-compose
+              chmod +x ~/docker-compose
+              mkdir -p ~/.local/bin
+              mv ~/docker-compose ~/.local/bin/docker-compose
         - run:
-            name: Start Services
+            name: Start Services and Test Kafka Connection
             command: |
-                export PATH=~/.local/bin:$PATH
-                ~/.local/bin/docker-compose up -d
-                sleep 30
-                docker-compose logs init-kafka
+              export PATH=~/.local/bin:$PATH
+              docker-compose up -d
+              sleep 30
+              docker-compose logs init-kafka
+              if ! docker-compose ps | grep -q "Up"; then
+                echo "Services failed to start properly"
+                exit 1
+              fi
 
     build_and_push_docker_image:
-        docker:
-        - image: cimg/node:current
-        steps:
+      docker:
+        - image: circleci/buildpack-deps:stable 
+      steps:
         - checkout
         - setup_remote_docker:
             docker_layer_caching: false
         - run:
             name: Build and Push Docker image
             command: |
-                docker build -t thiruthanikaiarasu/log-ingestion-server:latest .
-                echo $DOCKER_PASSWORD | docker login -u thiruthanikaiarasu --password-stdin
-                docker push thiruthanikaiarasu/log-ingestion-server:latest
+              docker build -t thiruthanikaiarasu/log-ingestion-server:latest .
+              echo "$DOCKER_PASSWORD" | docker login -u thiruthanikaiarasu --password-stdin
+              docker push thiruthanikaiarasu/log-ingestion-server:latest
 
 workflows:
     build_test:
-        jobs:
+      jobs:
         - install_dependencies
         - start_services:
             requires:
-                - install_dependencies
+              - install_dependencies
         - build_and_push_docker_image:
             requires:
-                - start_services
+              - start_services
