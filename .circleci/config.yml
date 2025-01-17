@@ -3,12 +3,38 @@ jobs:
     install_dependencies:
         docker:
             - image: circleci/node:current
+            - image: wurstmeister/kafka:latest
+              environment:
+                KAFKA_ADVERTISED_LISTENERS: INSIDE://localhost:9092
+                KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT
+                KAFKA_LISTENER_NAME_INSIDE: INSIDE
+                KAFKA_LISTENER_PORT: 9092
+                KAFKA_LISTENER_INTERFACE: lo0
+                KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
+                KAFKA_LISTENER_INTERNAL: INSIDE
         steps:
           - checkout
           - run:
                 name: Install npm dependencies
                 command: |
                     npm install 
+
+    start_kafka:
+        docker:
+            - image: wurstmeister/kafka:latest
+              environment:
+                KAFKA_ADVERTISED_LISTENERS: INSIDE://localhost:9092
+                KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT
+                KAFKA_LISTENER_NAME_INSIDE: INSIDE
+                KAFKA_LISTENER_PORT: 9092
+                KAFKA_LISTENER_INTERFACE: lo0
+                KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
+                KAFKA_LISTENER_INTERNAL: INSIDE
+        steps:
+            - run:
+                name: Start Kafka
+                command: |
+                    docker-compose -f docker-compose.yml up -d
 
     build_and_push_docker_image:
         docker:
@@ -28,4 +54,9 @@ workflows:
     build_test:
         jobs:
             - install_dependencies
-            - build_and_push_docker_image
+            - start_kafka:
+                requires:
+                    - install_dependencies
+            - build_and_push_docker_image:
+                requires:
+                    - start_kafka
