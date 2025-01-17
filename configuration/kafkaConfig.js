@@ -1,6 +1,6 @@
 const { Kafka, Partitioners, logLevel} = require('kafkajs')
 
-const brokers = process.env.KAFKA_BROKER.split(',')
+const brokers = (process.env.KAFKA_BROKER || 'localhost:9092').split(',')
 
 const kafkaProducer = new Kafka(
     {

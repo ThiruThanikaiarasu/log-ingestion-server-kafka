@@ -11,7 +11,7 @@ jobs:
             command: |
                 npm install 
 
-    start_kafka:
+    start_services:
         docker:
         - image: cimg/base:stable
         steps:
@@ -27,11 +27,12 @@ jobs:
                 mv ~/docker-compose ~/.local/bin/docker-compose
                 export PATH=~/.local/bin:$PATH
         - run:
-            name: Start Kafka
+            name: Start Services
             command: |
                 export PATH=~/.local/bin:$PATH
                 ~/.local/bin/docker-compose up -d
-                sleep 30  # Give some time for Kafka to start
+                sleep 30
+                docker-compose logs init-kafka
 
     build_and_push_docker_image:
         docker:
@@ -51,9 +52,9 @@ workflows:
     build_test:
         jobs:
         - install_dependencies
-        - start_kafka:
+        - start_services:
             requires:
                 - install_dependencies
         - build_and_push_docker_image:
             requires:
-                - start_kafka
+                - start_services
