@@ -1,10 +1,12 @@
 require('dotenv').config()
 const loadtest = require('loadtest')
 
+const maxRequests = process.argv[2] || 1000
+
 console.log(process.env.SERVER_URL)
 const options = {
     url: `${process.env.SERVER_URL}/api/v1/log`,
-    maxRequests: 1000,
+    maxRequests,
     method: 'POST',
     body: JSON.stringify({
         event_name: 'login'
