@@ -54,9 +54,9 @@ jobs:
         - run:
             name: Build and Push Docker image
             command: |
-              docker build -t thiruthanikaiarasu/log-ingestion-server:latest .
+              docker build -t thiruthanikaiarasu/log-ingestion-server-kafka:latest .
               echo "$DOCKER_PASSWORD" | docker login -u thiruthanikaiarasu --password-stdin
-              docker push thiruthanikaiarasu/log-ingestion-server:latest
+              docker push thiruthanikaiarasu/log-ingestion-server-kafka:latest
 
 workflows:
     build_test:
