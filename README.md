@@ -2,9 +2,9 @@
 ---
 This project implements a log ingestion service that buffers and batches incoming logs before storing them in S3. The service is built using Node.js, Express, and Kafka.
 
-Github Link : https://github.com/ThiruThanikaiarasu/log-ingestion-server
+Github Link : https://github.com/ThiruThanikaiarasu/log-ingestion-server-kafka
 
-Docker Image : https://hub.docker.com/r/thiruthanikaiarasu/log-ingestion-server
+Docker Image : https://hub.docker.com/r/thiruthanikaiarasu/log-ingestion-server-kafka
 
 ## Features
 ---
